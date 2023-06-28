@@ -14,28 +14,16 @@ import java.util.List;
 
 public class InfoflowTest {
     @Test
-    public void test1(){
+    public void test1() {
 
-
-        IInfoflowConfig infoflowConfig = (options, config) -> {
-
-            List<String> includeList = new LinkedList<>();
-            options.set_include(includeList);
-            // options.set_exclude(excludeList);
-            //options.set_no_bodies_for_excluded(true);
-            //options.set_allow_phantom_refs(true);
+        // Infoflow will set up soot configuration when set soot integration mode to 'CreateNewInstance' (by default)
+        // Default soot configuration is in AbstractInfoflow's initializeSoot method.
+        IInfoflowConfig sootConfig = (options, config) -> {
             options.set_ignore_classpath_errors(true);
-            options.set_output_format(Options.output_format_jimple);
-            //options.set_output_format(Options.output_format_none);
-            config.setWriteOutputFiles(true);
             config.getPathConfiguration().setPathReconstructionMode(InfoflowConfiguration.PathReconstructionMode.Fast);
             options.set_keep_line_number(true);
             options.set_prepend_classpath(true);
             options.set_src_prec(Options.src_prec_only_class);
-            options.setPhaseOption("jb", "use-original-names:true");
-            options.setPhaseOption("cg","all-reachable:true");
-            options.setPhaseOption("cg", "types-for-invoke:true");
-
         };
 
         InfoflowConfiguration config = new InfoflowConfiguration();
@@ -44,11 +32,8 @@ public class InfoflowTest {
 
         Infoflow infoflow = new Infoflow();
         infoflow.setConfig(config);
-        infoflow.setSootConfig(infoflowConfig);
-
-
-
-
+        infoflow.setSootConfig(sootConfig);
+        infoflow.computeInfoflow();
 
 
     }
