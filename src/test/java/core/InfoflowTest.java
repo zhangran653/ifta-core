@@ -24,16 +24,29 @@ public class InfoflowTest {
             options.set_keep_line_number(true);
             options.set_prepend_classpath(true);
             options.set_src_prec(Options.src_prec_only_class);
+            options.set_ignore_resolution_errors(true);
         };
 
         InfoflowConfiguration config = new InfoflowConfiguration();
-        config.setCodeEliminationMode(InfoflowConfiguration.CodeEliminationMode.NoCodeElimination);
+        config.setCodeEliminationMode(InfoflowConfiguration.CodeEliminationMode.RemoveSideEffectFreeCode);
         config.setImplicitFlowMode(InfoflowConfiguration.ImplicitFlowMode.ArrayAccesses);
+        config.setEnableReflection(true);
+        config.setEnableLineNumbers(true);
+        /**
+         * private int maxCallStackSize = 30;
+         * private int maxPathLength = 75;
+         * private int maxPathsPerAbstraction = 15;
+         * private long pathReconstructionTimeout = 0;
+         * private int pathReconstructionBatchSize = 5;
+         */
+        config.getPathConfiguration().setPathReconstructionMode(InfoflowConfiguration.PathReconstructionMode.Fast);
+        config.getPathConfiguration().setPathReconstructionTimeout(180);
+        config.getPathConfiguration().setMaxPathLength(25);
 
         Infoflow infoflow = new Infoflow();
         infoflow.setConfig(config);
         infoflow.setSootConfig(sootConfig);
-        infoflow.computeInfoflow();
+        //infoflow.computeInfoflow();
 
 
     }
