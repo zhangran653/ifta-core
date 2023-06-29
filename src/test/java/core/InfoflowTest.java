@@ -26,10 +26,12 @@ public class InfoflowTest {
         Map m = gson.fromJson(new FileReader("config.json"), HashMap.class);
         String appPath = (String)m.get("appPath");
         List<String> lp = (ArrayList<String>)m.get("libPaths");
-
         List<String> epoints =   (ArrayList<String>)m.get("epoints");
         List<String> sources =   (ArrayList<String>)m.get("sources");
         List<String> sinks =   (ArrayList<String>)m.get("sources");
+        List<String> excludes =   (ArrayList<String>)m.get("excludes");
+
+
         List<String> realLibPath = new ArrayList<>();
         for (var path : lp) {
             if (path.endsWith(".jar")) {
@@ -56,7 +58,7 @@ public class InfoflowTest {
             options.set_prepend_classpath(true);
             options.set_src_prec(Options.src_prec_only_class);
             options.set_ignore_resolution_errors(true);
-
+            options.set_exclude(excludes);
         };
 
         InfoflowConfiguration config = new InfoflowConfiguration();
