@@ -2,19 +2,27 @@ package ta;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import soot.G;
+import soot.PackManager;
+import soot.Scene;
+import soot.SootClass;
+import soot.options.Options;
 import utils.PathOptimization;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 public class Config {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public final String entryFormatter = "<%s: void _jspService(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>";
 
-    private boolean autoAddJspEntry = true;
+    private boolean autoAddEntry = true;
 
     private List<String> epoints = Collections.emptyList();
 
@@ -28,7 +36,7 @@ public class Config {
 
     private String libPath;
 
-    private List<String> excludes = Collections.emptyList();
+    private Set<String> excludes = Collections.emptySet();
 
     private int pathReconstructionTimeout = 180;
 
@@ -42,6 +50,48 @@ public class Config {
 
     private String tempDir;
 
+    private List<Rule> rules;
+
+
+    public static class Rule {
+        private String name;
+        private List<String> sources = Collections.emptyList();
+
+        private List<String> sinks = Collections.emptyList();
+
+        public List<String> getSources() {
+            return sources;
+        }
+
+        public void setSources(List<String> sources) {
+            this.sources = sources;
+        }
+
+        public List<String> getSinks() {
+            return sinks;
+        }
+
+        public void setSinks(List<String> sinks) {
+            this.sinks = sinks;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
+    public List<Rule> getRules() {
+        return rules;
+    }
+
+    public void setRules(List<Rule> rules) {
+        this.rules = rules;
+    }
+
     public String getProject() {
         return project;
     }
@@ -50,12 +100,12 @@ public class Config {
         return entryFormatter;
     }
 
-    public boolean isAutoAddJspEntry() {
-        return autoAddJspEntry;
+    public boolean isAutoAddEntry() {
+        return autoAddEntry;
     }
 
     public void setAutoAddJspEntry(boolean autoAddJspEntry) {
-        this.autoAddJspEntry = autoAddJspEntry;
+        this.autoAddEntry = autoAddJspEntry;
     }
 
     public void setProject(String project) {
@@ -94,6 +144,7 @@ public class Config {
             logger.info("create temp dir: {}", tmpdir);
             this.tempDir = tmpdir.toString();
             Set<String> copied = new HashSet<>();
+            List<String> javaClasses = new ArrayList<>();
             try {
                 for (var file : classFiles) {
                     String absPath = Paths.get(project, file).toString();
@@ -103,8 +154,12 @@ public class Config {
                     }
                     File o = new File(absPath);
                     String packageName = PathOptimization.classPackageName(absPath);
+                    String className = PathOptimization.className(absPath);
                     if (packageName == null) {
                         continue;
+                    }
+                    if (className != null) {
+                        javaClasses.add(className);
                     }
                     Path d = Paths.get(tmpdir.toString(), PathOptimization.packageToDirString(packageName), o.getName());
                     logger.info("copy {} to {}", o.getPath(), d);
@@ -116,8 +171,37 @@ public class Config {
             }
             appPath = tempDir;
             addEntry();
+            List<String> libClasses = scanLibClasses(libPath);
+            libClasses.removeAll(javaClasses);
+            excludes.addAll(libClasses);
 
         }
+    }
+
+    private List<String> scanLibClasses(String libPath) {
+        String[] jarFiles = libPath.split(File.pathSeparator);
+        List<String> result = new ArrayList<>();
+        for (String jarName : jarFiles) {
+            if (jarName.contains("rt.jar")) {
+                continue;
+            }
+            try {
+                JarFile jarFile = new JarFile(jarName);
+                Enumeration<JarEntry> entries = jarFile.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    String entryName = entry.getName();
+                    if ((!entryName.contains("$")) && entryName.endsWith(".class")) {
+                        String className = entryName.substring(0, entryName.length() - ".class".length())
+                                .replace("/", ".");
+                        result.add(className);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return result;
     }
 
     public void scanLib() {
@@ -138,17 +222,50 @@ public class Config {
         libPath = String.join(File.pathSeparator, realLibPath);
     }
 
+    private void setUpSoot() {
+        G.reset();
+        Options.v().set_src_prec(Options.src_prec_only_class);
+        Options.v().set_prepend_classpath(true);
+        Options.v().set_output_format(Options.output_format_none);
+        Options.v().set_exclude(excludes.stream().toList());
+        Options.v().set_no_bodies_for_excluded(true);
+        Options.v().set_allow_phantom_refs(true);
+        Options.v().set_process_dir(Collections.singletonList(tempDir));
+        Options.v().set_whole_program(true);
+        Scene.v().loadNecessaryClasses();
+        PackManager.v().runPacks();
+    }
 
     public void addEntry() {
-        if (autoAddJspEntry) {
-            List<String> jspClassFiles = PathOptimization.filterFile(tempDir, new String[]{"**/*_jsp.class"});
-            for (var clazz : jspClassFiles) {
+        if (autoAddEntry) {
+            setUpSoot();
+            List<String> javaClasses = PathOptimization.filterFile(tempDir, new String[]{"**/*.class"});
+            for (var clazz : javaClasses) {
                 String absPath = Paths.get(tempDir, clazz).toString();
                 String fullClassName = PathOptimization.className(absPath);
-                String entry = String.format(entryFormatter, fullClassName);
-                logger.info("add {} to entry points", entry);
-                epoints.add(entry);
+                try {
+                    SootClass sc = Scene.v().getSootClass(fullClassName);
+                    if (sc.declaresMethodByName("doGet")) {
+                        String sg = sc.getMethodByName("doGet").getSignature();
+                        logger.info("add {} to entry points", sg);
+                        epoints.add(sg);
+                    }
+                    if (sc.declaresMethodByName("doPost")) {
+                        String sg = sc.getMethodByName("doPost").getSignature();
+                        logger.info("add {} to entry points", sg);
+                        epoints.add(sg);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (clazz.endsWith("_jsp.class")) {
+                    String entry = String.format(entryFormatter, fullClassName);
+                    logger.info("add {} to entry points", entry);
+                    epoints.add(entry);
+                }
+
             }
+
         }
     }
 
@@ -224,11 +341,15 @@ public class Config {
         this.libPaths = libPaths;
     }
 
-    public List<String> getExcludes() {
+    public void setAutoAddEntry(boolean autoAddEntry) {
+        this.autoAddEntry = autoAddEntry;
+    }
+
+    public Set<String> getExcludes() {
         return excludes;
     }
 
-    public void setExcludes(List<String> excludes) {
+    public void setExcludes(Set<String> excludes) {
         this.excludes = excludes;
     }
 
