@@ -81,10 +81,9 @@ public class ReuseableInfoflow extends Infoflow {
         if (!hasUse()) {
             this.computeInfoflow(appPath, libPath, new DefaultEntryPointCreator(entryPoints),
                     new DefaultSourceSinkManager(sources, sinks));
-            useCount += 1;
 
         } else {
-            logger.info("----reuse soot and iCFG to compute infofolw----");
+            logger.info("\n---- reuse soot and iCFG to compute info flow ----\n");
             var sourcesSinks = new DefaultSourceSinkManager(sources, sinks);
             final InfoflowPerformanceData performanceData = createPerformanceDataClass();
             try {
@@ -129,8 +128,8 @@ public class ReuseableInfoflow extends Infoflow {
                 results.addException(ex.getClass().getName() + ": " + ex.getMessage() + "\n" + stacktrace.toString());
                 logger.error("Exception during data flow analysis", ex);
             }
-            useCount += 1;
         }
+        useCount += 1;
 
     }
 
