@@ -100,7 +100,7 @@ public class ReuseableInfoflow extends Infoflow {
                     memoryWatcher = null;
                 }
                 memoryWatcher = new FlowDroidMemoryWatcher(results, config.getMemoryThreshold());
-                // Build the callgraph
+                // No need to build the call graph but still keep the timestamp to trace performance.
                 long beforeCallgraph = System.nanoTime();
                 // Initialize the source sink manager
                 sourcesSinks.initialize();

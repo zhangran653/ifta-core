@@ -13,6 +13,16 @@ public class DetectedResult {
     private String sinkSig;
     private List<PathUnit> path;
 
+    private List<String> pathStm;
+
+    public List<String> getPathStm() {
+        return pathStm;
+    }
+
+    public void setPathStm(List<String> pathStm) {
+        this.pathStm = pathStm;
+    }
+
     public Level getSeverity() {
         return severity;
     }

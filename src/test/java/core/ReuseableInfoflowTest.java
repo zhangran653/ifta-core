@@ -10,6 +10,7 @@ import soot.jimple.infoflow.results.ResultSinkInfo;
 import soot.jimple.infoflow.results.ResultSourceInfo;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
+import ta.Config;
 import ta.DetectedResult;
 import ta.ReuseableInfoflow;
 import utils.PathOptimization;
@@ -20,16 +21,16 @@ import java.util.*;
 public class ReuseableInfoflowTest {
 
     @Test
-    public void test3() throws IOException {
+    public void test1() throws IOException {
 
         Gson gson = new Gson();
-        Map m = gson.fromJson(new FileReader("config.json"), HashMap.class);
-        String appPath = (String) m.get("appPath");
-        List<String> lp = (ArrayList<String>) m.get("libPaths");
-        List<String> epoints = (ArrayList<String>) m.get("epoints");
-        List<String> sources = (ArrayList<String>) m.get("sources");
-        List<String> sinks = (ArrayList<String>) m.get("sources");
-        List<String> excludes = (ArrayList<String>) m.get("excludes");
+        Config c = gson.fromJson(new FileReader("config.json"), Config.class);
+        String appPath = c.getAppPath();
+        List<String> lp = c.getLibPaths();
+        List<String> epoints = c.getEpoints();
+        List<String> sources =c.getSources();
+        List<String> sinks = c.getSinks();
+        List<String> excludes = c.getExcludes();
 
 
         List<String> realLibPath = new ArrayList<>();
@@ -55,6 +56,7 @@ public class ReuseableInfoflowTest {
             options.set_src_prec(Options.src_prec_only_class);
             options.set_ignore_resolution_errors(true);
             options.set_exclude(excludes);
+            options.set_keep_offset(true);
         };
 
         InfoflowConfiguration config = new InfoflowConfiguration();
@@ -71,7 +73,8 @@ public class ReuseableInfoflowTest {
          */
         config.getPathConfiguration().setPathReconstructionMode(InfoflowConfiguration.PathReconstructionMode.Fast);
         config.getPathConfiguration().setPathReconstructionTimeout(180);
-        config.getPathConfiguration().setMaxPathLength(25);
+        config.getPathConfiguration().setMaxPathLength(75);
+        config.getPathConfiguration().setMaxPathsPerAbstraction(15);
 
         //
         ReuseableInfoflow infoflow = new ReuseableInfoflow("", false);
@@ -95,6 +98,7 @@ public class ReuseableInfoflowTest {
                         result.setSinkSig(sinkSig);
                         result.setSourceSig(source.getDefinition().toString());
                         result.setPath(PathOptimization.resultPath(infoflow.getICFG(), source, sink));
+                        result.setPathStm(PathOptimization.pathStm(source));
                         if (result.getPath().size() > 0) {
                             results.add(result);
                         }

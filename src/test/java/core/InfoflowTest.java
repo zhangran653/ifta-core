@@ -4,27 +4,22 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import heros.solver.Pair;
 import org.junit.Test;
-import soot.*;
+import soot.PackManager;
+import soot.Scene;
+import soot.SootClass;
+import soot.SootMethod;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowConfiguration;
-import soot.jimple.infoflow.InfoflowManager;
 import soot.jimple.infoflow.cfg.LibraryClassPatcher;
-import soot.jimple.infoflow.codeOptimization.DeadCodeEliminator;
-import soot.jimple.infoflow.codeOptimization.ICodeOptimizer;
 import soot.jimple.infoflow.config.IInfoflowConfig;
-import soot.jimple.infoflow.data.AccessPathFactory;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
-import soot.jimple.infoflow.handlers.PreAnalysisHandler;
 import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.results.ResultSinkInfo;
 import soot.jimple.infoflow.results.ResultSourceInfo;
 import soot.jimple.infoflow.solver.cfg.IInfoflowCFG;
-import soot.jimple.infoflow.sourcesSinks.manager.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
-import soot.jimple.infoflow.util.SootMethodRepresentationParser;
-import soot.jimple.toolkits.pointer.DumbPointerAnalysis;
 import soot.options.Options;
 import soot.tagkit.LineNumberTag;
 import ta.CachedBiDiICFGFactory;
@@ -33,10 +28,8 @@ import ta.PathUnit;
 import ta.ReuseableInfoflow;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
 public class InfoflowTest {
     @Test
@@ -48,7 +41,7 @@ public class InfoflowTest {
         List<String> lp = (ArrayList<String>) m.get("libPaths");
         List<String> epoints = (ArrayList<String>) m.get("epoints");
         List<String> sources = (ArrayList<String>) m.get("sources");
-        List<String> sinks = (ArrayList<String>) m.get("sources");
+        List<String> sinks = (ArrayList<String>) m.get("sinks");
         List<String> excludes = (ArrayList<String>) m.get("excludes");
 
 
@@ -91,7 +84,7 @@ public class InfoflowTest {
          */
         config.getPathConfiguration().setPathReconstructionMode(InfoflowConfiguration.PathReconstructionMode.Fast);
         config.getPathConfiguration().setPathReconstructionTimeout(180);
-        config.getPathConfiguration().setMaxPathLength(25);
+        config.getPathConfiguration().setMaxPathLength(75);
 
         //
         CachedBiDiICFGFactory cachedBiDiICFGFactory = new CachedBiDiICFGFactory();
@@ -152,7 +145,7 @@ public class InfoflowTest {
         List<String> lp = (ArrayList<String>) m.get("libPaths");
         List<String> epoints = (ArrayList<String>) m.get("epoints");
         List<String> sources = (ArrayList<String>) m.get("sources");
-        List<String> sinks = (ArrayList<String>) m.get("sources");
+        List<String> sinks = (ArrayList<String>) m.get("sinks");
         List<String> excludes = (ArrayList<String>) m.get("excludes");
 
 
@@ -247,7 +240,7 @@ public class InfoflowTest {
         List<String> lp = (ArrayList<String>) m.get("libPaths");
         List<String> epoints = (ArrayList<String>) m.get("epoints");
         List<String> sources = (ArrayList<String>) m.get("sources");
-        List<String> sinks = (ArrayList<String>) m.get("sources");
+        List<String> sinks = (ArrayList<String>) m.get("sinks");
         List<String> excludes = (ArrayList<String>) m.get("excludes");
 
 
@@ -290,7 +283,7 @@ public class InfoflowTest {
          */
         config.getPathConfiguration().setPathReconstructionMode(InfoflowConfiguration.PathReconstructionMode.Fast);
         config.getPathConfiguration().setPathReconstructionTimeout(180);
-        config.getPathConfiguration().setMaxPathLength(25);
+        config.getPathConfiguration().setMaxPathLength(75);
 
         //
         ReuseableInfoflow infoflow = new ReuseableInfoflow("", false);
