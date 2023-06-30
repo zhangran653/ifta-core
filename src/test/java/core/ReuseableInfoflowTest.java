@@ -13,6 +13,7 @@ import soot.options.Options;
 import ta.Config;
 import ta.DetectedResult;
 import ta.ReuseableInfoflow;
+import utils.IFFactory;
 import utils.PathOptimization;
 
 import java.io.*;
@@ -28,7 +29,7 @@ public class ReuseableInfoflowTest {
         String appPath = c.getAppPath();
         List<String> lp = c.getLibPaths();
         List<String> epoints = c.getEpoints();
-        List<String> sources =c.getSources();
+        List<String> sources = c.getSources();
         List<String> sinks = c.getSinks();
         List<String> excludes = c.getExcludes();
 
@@ -117,5 +118,34 @@ public class ReuseableInfoflowTest {
         }
 
 
+    }
+
+    @Test
+    public void test2() throws FileNotFoundException {
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        Config c = gson.fromJson(new FileReader("config.json"), Config.class);
+        String appPath = c.getAppPath();
+        List<String> lp = c.getLibPaths();
+        List<String> epoints = c.getEpoints();
+        List<String> sources = c.getSources();
+        List<String> sinks = c.getSinks();
+
+        c.scanLib();
+
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(c);
+
+        for (int i = 0; i < 3; i++) {
+            infoflow.computeInfoflow(appPath, c.getLibPath(), epoints, sources, sinks);
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG());
+
+            try {
+                String json = gson.toJson(results);
+                Writer writer = new FileWriter("result3-" + i + ".json");
+                writer.write(json);
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

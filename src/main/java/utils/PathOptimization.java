@@ -2,11 +2,14 @@ package utils;
 
 import soot.SootMethod;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.results.ResultSinkInfo;
 import soot.jimple.infoflow.results.ResultSourceInfo;
 import soot.jimple.infoflow.solver.cfg.IInfoflowCFG;
 import soot.tagkit.BytecodeOffsetTag;
 import soot.tagkit.LineNumberTag;
+import ta.DetectedResult;
 import ta.PathUnit;
 
 import java.util.ArrayList;
@@ -37,5 +40,26 @@ public class PathOptimization {
 
     public static List<String> pathStm(ResultSourceInfo source) {
         return Arrays.stream(source.getPath()).map(String::valueOf).toList();
+    }
+
+    public static List<DetectedResult> detectedResults(Infoflow infoflow, IInfoflowCFG iCFG) {
+        InfoflowResults infoflowResults = infoflow.getResults();
+        List<DetectedResult> results = new ArrayList<>();
+        if (!infoflowResults.isEmpty()) {
+            for (ResultSinkInfo sink : infoflowResults.getResults().keySet()) {
+                String sinkSig = sink.getDefinition().toString();
+                for (ResultSourceInfo source : infoflowResults.getResults().get(sink)) {
+                    DetectedResult result = new DetectedResult();
+                    result.setSinkSig(sinkSig);
+                    result.setSourceSig(source.getDefinition().toString());
+                    result.setPath(PathOptimization.resultPath(iCFG, source, sink));
+                    result.setPathStm(PathOptimization.pathStm(source));
+                    if (result.getPath().size() > 0) {
+                        results.add(result);
+                    }
+                }
+            }
+        }
+        return results;
     }
 }

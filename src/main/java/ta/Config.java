@@ -1,7 +1,7 @@
 package ta;
 
-import java.util.Collections;
-import java.util.List;
+import java.io.File;
+import java.util.*;
 
 public class Config {
     private List<String> epoints = Collections.emptyList();
@@ -14,8 +14,53 @@ public class Config {
 
     private List<String> libPaths = Collections.emptyList();
 
+    private String libPath;
+
     private List<String> excludes = Collections.emptyList();
 
+    private int pathReconstructionTimeout = 180;
+
+    private int maxPathLength = 75;
+
+    public void scanLib() {
+        List<String> realLibPath = new ArrayList<>();
+        for (var path : libPaths) {
+            if (path.endsWith(".jar")) {
+                realLibPath.add(path);
+            } else {
+                File file = new File(path);
+                if (file.isDirectory()) {
+                    realLibPath.addAll(Arrays.stream(Objects.requireNonNull(file.listFiles())).filter(f -> f.getName().endsWith(".jar")).map(File::getPath).toList());
+                }
+            }
+        }
+        libPath = String.join(File.pathSeparator, realLibPath);
+    }
+
+
+    public String getLibPath() {
+        return libPath;
+    }
+
+    public void setLibPath(String libPath) {
+        this.libPath = libPath;
+    }
+
+    public int getPathReconstructionTimeout() {
+        return pathReconstructionTimeout;
+    }
+
+    public void setPathReconstructionTimeout(int pathReconstructionTimeout) {
+        this.pathReconstructionTimeout = pathReconstructionTimeout;
+    }
+
+    public int getMaxPathLength() {
+        return maxPathLength;
+    }
+
+    public void setMaxPathLength(int maxPathLength) {
+        this.maxPathLength = maxPathLength;
+    }
 
     public List<String> getEpoints() {
         return epoints;
