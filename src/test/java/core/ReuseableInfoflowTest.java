@@ -17,6 +17,9 @@ import utils.IFFactory;
 import utils.PathOptimization;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class ReuseableInfoflowTest {
@@ -125,7 +128,6 @@ public class ReuseableInfoflowTest {
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
         Config c = gson.fromJson(new FileReader("config.json"), Config.class);
         String appPath = c.getAppPath();
-        List<String> lp = c.getLibPaths();
         List<String> epoints = c.getEpoints();
         List<String> sources = c.getSources();
         List<String> sinks = c.getSinks();
@@ -147,5 +149,45 @@ public class ReuseableInfoflowTest {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Test
+    public void test3() throws IOException {
+        Path tmpdir = PathOptimization.createTempdir();
+        System.out.println(tmpdir);
+        String project = "/home/ran/Documents/work/thusa2/ifpc-testcase/WebGoat-5.0";
+        File o = new File("/home/ran/Documents/work/thusa2/ifpc-testcase/WebGoat-5.0/WebContent/classes/org/owasp/webgoat/LessonSource.class");
+        String relp = PathOptimization.removePrefix(o.getPath(), project);
+        Path path = Paths.get(tmpdir.toString(), relp);
+        PathOptimization.copy(o, path.toFile());
+        PathOptimization.deteleTempdir(tmpdir.toString());
+    }
+
+    @Test
+    public void test4() throws FileNotFoundException {
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        Config c = gson.fromJson(new FileReader("config2.json"), Config.class);
+        c.autoConfig();
+        String appPath = c.getAppPath();
+        List<String> epoints = c.getEpoints();
+        List<String> sources = c.getSources();
+        List<String> sinks = c.getSinks();
+
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(c);
+
+        for (int i = 0; i < 3; i++) {
+            infoflow.computeInfoflow(appPath, c.getLibPath(), epoints, sources, sinks);
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG());
+
+            try {
+                String json = gson.toJson(results);
+                Writer writer = new FileWriter("result3-" + i + ".json");
+                writer.write(json);
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        PathOptimization.deteleTempdir(c.getTempDir());
     }
 }

@@ -254,13 +254,11 @@
     "<java.sql.Statement: int executeUpdate(java.lang.String,int)>",
     "<java.lang.ProcessBuilder: void <init>(java.util.List)>"
   ],
-  "appPath": "/home/ran/Documents/work/thusa2/ifpc-testcase/WebGoat-5.0/WebContent/WEB-INF/classes",
-  "libPaths": [
-    "/home/ran/Documents/work/thusa2/ifpc-testcase/jdk/rt.jar",
-    "/home/ran/Documents/work/thusa2/ifpc-testcase/WebGoat-5.0/WebContent/WEB-INF/lib"
-  ],
   "excludes": [
     "com.alibaba.*",
     "org.springframework.*"
-  ]
+  ],
+  "autoDetect": true,
+  "project": "/home/ran/Documents/work/thusa2/ifpc-testcase/WebGoat-5.0",
+  "jdk": "/home/ran/Documents/work/thusa2/ifpc-testcase/jdk/rt.jar"
 }

@@ -1,5 +1,10 @@
 package utils;
 
+import org.apache.bcel.classfile.ClassFormatException;
+import org.apache.bcel.classfile.ClassParser;
+import org.apache.bcel.classfile.JavaClass;
+import org.apache.commons.io.FileUtils;
+import org.apache.tools.ant.DirectoryScanner;
 import soot.SootMethod;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
@@ -12,10 +17,19 @@ import soot.tagkit.LineNumberTag;
 import ta.DetectedResult;
 import ta.PathUnit;
 
+import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
 
 public class PathOptimization {
 
@@ -62,4 +76,78 @@ public class PathOptimization {
         }
         return results;
     }
+
+    public static List<String> filterFile(String baseDir, String[] patterns) {
+        DirectoryScanner scanner = new DirectoryScanner();
+        //new String[]{"**/*.java"}
+        scanner.setIncludes(patterns);
+        scanner.setBasedir(baseDir);
+        scanner.setCaseSensitive(false);
+        scanner.scan();
+        return Arrays.asList(scanner.getIncludedFiles());
+    }
+
+    public static Path createTempdir() {
+        try {
+            return Files.createTempDirectory("").toFile().toPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deteleTempdir(String path) {
+        String tmpDirsLocation = System.getProperty("java.io.tmpdir");
+        if (path.startsWith(tmpDirsLocation)) {
+            try {
+                FileUtils.deleteDirectory(new File(path));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static String md5(String filePath) {
+        byte[] data;
+        try {
+            data = Files.readAllBytes(Paths.get(filePath));
+            byte[] hash = MessageDigest.getInstance("MD5").digest(data);
+            return new BigInteger(1, hash).toString(16);
+        } catch (IOException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public static void copy(File original, File copied) {
+        try {
+            FileUtils.copyFile(original, copied);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String removePrefix(String s, String prefix) {
+        if (s != null && s.startsWith(prefix)) {
+            return s.split(prefix, 2)[1];
+        }
+        return s;
+    }
+
+    public static String classPackageName(String filePath) {
+        ClassParser classParser = new ClassParser(filePath);
+        JavaClass javaClass;
+        try {
+            javaClass = classParser.parse();
+            return javaClass.getPackageName();
+        } catch (IOException | ClassFormatException e) {
+            e.printStackTrace();
+        }
+        return null;
+
+    }
+
+    public static String packageToDirString(String packageName){
+        return packageName.replaceAll("\\.", Matcher.quoteReplacement(File.separator));
+    }
+
 }
