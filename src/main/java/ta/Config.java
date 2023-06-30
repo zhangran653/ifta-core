@@ -12,6 +12,10 @@ import java.util.*;
 public class Config {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    public final String entryFormatter = "<%s: void _jspService(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>";
+
+    private boolean autoAddJspEntry = true;
+
     private List<String> epoints = Collections.emptyList();
 
     private List<String> sources = Collections.emptyList();
@@ -40,6 +44,18 @@ public class Config {
 
     public String getProject() {
         return project;
+    }
+
+    public String getEntryFormatter() {
+        return entryFormatter;
+    }
+
+    public boolean isAutoAddJspEntry() {
+        return autoAddJspEntry;
+    }
+
+    public void setAutoAddJspEntry(boolean autoAddJspEntry) {
+        this.autoAddJspEntry = autoAddJspEntry;
     }
 
     public void setProject(String project) {
@@ -99,6 +115,7 @@ public class Config {
                 throw new RuntimeException(e);
             }
             appPath = tempDir;
+            addEntry();
 
         }
     }
@@ -121,6 +138,19 @@ public class Config {
         libPath = String.join(File.pathSeparator, realLibPath);
     }
 
+
+    public void addEntry() {
+        if (autoAddJspEntry) {
+            List<String> jspClassFiles = PathOptimization.filterFile(tempDir, new String[]{"**/*_jsp.class"});
+            for (var clazz : jspClassFiles) {
+                String absPath = Paths.get(tempDir, clazz).toString();
+                String fullClassName = PathOptimization.className(absPath);
+                String entry = String.format(entryFormatter, fullClassName);
+                logger.info("add {} to entry points", entry);
+                epoints.add(entry);
+            }
+        }
+    }
 
     public String getLibPath() {
         return libPath;

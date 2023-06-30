@@ -133,6 +133,17 @@ public class PathOptimization {
         return s;
     }
 
+    public static String className(String filePath) {
+        ClassParser classParser = new ClassParser(filePath);
+        JavaClass javaClass;
+        try {
+            javaClass = classParser.parse();
+            return javaClass.getClassName();
+        } catch (IOException | ClassFormatException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
     public static String classPackageName(String filePath) {
         ClassParser classParser = new ClassParser(filePath);
         JavaClass javaClass;
@@ -143,10 +154,11 @@ public class PathOptimization {
             e.printStackTrace();
         }
         return null;
-
     }
 
-    public static String packageToDirString(String packageName){
+
+
+    public static String packageToDirString(String packageName) {
         return packageName.replaceAll("\\.", Matcher.quoteReplacement(File.separator));
     }
 
