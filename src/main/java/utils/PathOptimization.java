@@ -34,6 +34,10 @@ import java.util.regex.Matcher;
 public class PathOptimization {
 
     public static List<PathUnit> resultPath(IInfoflowCFG icfg, ResultSourceInfo source, ResultSinkInfo sink) {
+        return resultPath(icfg, source, sink, null);
+    }
+
+    public static List<PathUnit> resultPath(IInfoflowCFG icfg, ResultSourceInfo source, ResultSinkInfo sink, String projectDir) {
         ArrayList<PathUnit> path = new ArrayList<>();
         Stmt[] pathStmts = source.getPath();
         if (pathStmts == null) {
@@ -46,8 +50,12 @@ public class PathOptimization {
             unit.setFunction(inFunction.getSignature());
             unit.setJimpleStmt(p.toString());
             unit.setLine(p.getJavaSourceStartLineNumber());
+            // java source file
+            if (projectDir != null && !projectDir.isBlank()) {
+                String file = locateSourceFile(projectDir, unit.getJavaClass());
+                unit.setFile(file);
+            }
             path.add(unit);
-
         }
         return path;
     }
@@ -56,7 +64,7 @@ public class PathOptimization {
         return Arrays.stream(source.getPath()).map(String::valueOf).toList();
     }
 
-    public static List<DetectedResult> detectedResults(Infoflow infoflow, IInfoflowCFG iCFG) {
+    public static List<DetectedResult> detectedResults(Infoflow infoflow, IInfoflowCFG iCFG, String projectDir) {
         InfoflowResults infoflowResults = infoflow.getResults();
         List<DetectedResult> results = new ArrayList<>();
         if (!infoflowResults.isEmpty()) {
@@ -66,7 +74,7 @@ public class PathOptimization {
                     DetectedResult result = new DetectedResult();
                     result.setSinkSig(sinkSig);
                     result.setSourceSig(source.getDefinition().toString());
-                    result.setPath(PathOptimization.resultPath(iCFG, source, sink));
+                    result.setPath(PathOptimization.resultPath(iCFG, source, sink, projectDir));
                     result.setPathStm(PathOptimization.pathStm(source));
                     if (result.getPath().size() > 0) {
                         results.add(result);
@@ -75,6 +83,10 @@ public class PathOptimization {
             }
         }
         return results;
+    }
+
+    public static List<DetectedResult> detectedResults(Infoflow infoflow, IInfoflowCFG iCFG) {
+        return detectedResults(infoflow, iCFG, null);
     }
 
     public static List<String> filterFile(String baseDir, String[] patterns) {
@@ -144,6 +156,7 @@ public class PathOptimization {
         }
         return null;
     }
+
     public static String classPackageName(String filePath) {
         ClassParser classParser = new ClassParser(filePath);
         JavaClass javaClass;
@@ -157,9 +170,21 @@ public class PathOptimization {
     }
 
 
-
     public static String packageToDirString(String packageName) {
         return packageName.replaceAll("\\.", Matcher.quoteReplacement(File.separator));
     }
+
+    public static String locateSourceFile(String projectDir, String javaClass) {
+        if (javaClass.contains("$")) {
+            javaClass = javaClass.substring(0, javaClass.indexOf("$"));
+        }
+        String path = packageToDirString(javaClass) + ".java";
+        List<String> sourceFile = filterFile(projectDir, new String[]{"**/" + path});
+        if (sourceFile.isEmpty()) {
+            return null;
+        }
+        return sourceFile.get(0);
+    }
+
 
 }

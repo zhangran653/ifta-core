@@ -177,7 +177,7 @@ public class ReuseableInfoflowTest {
 
         for (int i = 0; i < 3; i++) {
             infoflow.computeInfoflow(appPath, c.getLibPath(), epoints, sources, sinks);
-            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG());
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), c.getProject());
 
             try {
                 String json = gson.toJson(results);
