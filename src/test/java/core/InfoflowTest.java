@@ -26,9 +26,14 @@ import ta.CachedBiDiICFGFactory;
 import ta.DetectedResult;
 import ta.PathUnit;
 import ta.ReuseableInfoflow;
+import utils.ClassPathResource;
+import utils.PathOptimization;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 
 public class InfoflowTest {
@@ -57,23 +62,35 @@ public class InfoflowTest {
             }
         }
         String libPath = String.join(File.pathSeparator, realLibPath);
+        List<String> libClasses = scanLibClasses(libPath);
+        List<String> javaClasses = new ArrayList<>();
+        List<String> classFiles = PathOptimization.filterFile(appPath, new String[]{"**/*.class"});
+        for (var file : classFiles) {
+            String absPath = Paths.get(appPath, file).toString();
+            String className = PathOptimization.className(absPath);
+            javaClasses.add(className);
+
+        }
+        libClasses.removeAll(javaClasses);
+        excludes.addAll(libClasses);
+
 
         // Infoflow will set up soot configuration when set soot integration mode to 'CreateNewInstance' (by default)
         // Default soot configuration is in AbstractInfoflow's initializeSoot method.
         IInfoflowConfig sootConfig = (options, config) -> {
             options.set_ignore_classpath_errors(true);
-            config.getPathConfiguration().setPathReconstructionMode(InfoflowConfiguration.PathReconstructionMode.Fast);
             options.set_keep_line_number(true);
             options.set_prepend_classpath(true);
             options.set_src_prec(Options.src_prec_only_class);
             options.set_ignore_resolution_errors(true);
             options.set_exclude(excludes);
+            options.set_process_dir(Arrays.asList(appPath.split(File.pathSeparator)));
         };
 
         InfoflowConfiguration config = new InfoflowConfiguration();
         config.setCodeEliminationMode(InfoflowConfiguration.CodeEliminationMode.PropagateConstants);
         config.setImplicitFlowMode(InfoflowConfiguration.ImplicitFlowMode.ArrayAccesses);
-        config.setEnableReflection(false);
+        config.setEnableReflection(true);
         config.setEnableLineNumbers(true);
         /**
          * private int maxCallStackSize = 30;
@@ -85,6 +102,7 @@ public class InfoflowTest {
         config.getPathConfiguration().setPathReconstructionMode(InfoflowConfiguration.PathReconstructionMode.Fast);
         config.getPathConfiguration().setPathReconstructionTimeout(180);
         config.getPathConfiguration().setMaxPathLength(75);
+        config.setCallgraphAlgorithm(InfoflowConfiguration.CallgraphAlgorithm.CHA);
 
         //
         CachedBiDiICFGFactory cachedBiDiICFGFactory = new CachedBiDiICFGFactory();
@@ -92,22 +110,18 @@ public class InfoflowTest {
         infoflow.setConfig(config);
         infoflow.setSootConfig(sootConfig);
 
-        EasyTaintWrapper easyTaintWrapper = EasyTaintWrapper.getDefault();
-        infoflow.setTaintWrapper(easyTaintWrapper);
-
-        infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
-        InfoflowResults infoflowResults = infoflow.getResults();
-
-
-        gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        EasyTaintWrapper wrapper;
         try {
-            String json = gson.toJson(new OutputInfoflowResults(infoflowResults));
-            Writer writer = new FileWriter("result.json");
-            writer.write(json);
-            writer.close();
+            ClassPathResource classPathResource = new ClassPathResource("EasyTaintWrapperSource.txt");
+            wrapper = new EasyTaintWrapper(classPathResource.getInputStream());
+            infoflow.setTaintWrapper(wrapper);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+        infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+        InfoflowResults infoflowResults = infoflow.getResults();
 
         List<DetectedResult> results = new ArrayList<>();
         if (!infoflowResults.isEmpty()) {
@@ -134,6 +148,31 @@ public class InfoflowTest {
             e.printStackTrace();
         }
 
+    }
+
+    private List<String> scanLibClasses(String libPath) {
+        String[] jarFiles = libPath.split(File.pathSeparator);
+        List<String> result = new ArrayList<>();
+        for (String jarName : jarFiles) {
+            if (jarName.contains("rt.jar")) {
+                continue;
+            }
+            try {
+                JarFile jarFile = new JarFile(jarName);
+                Enumeration<JarEntry> entries = jarFile.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    String entryName = entry.getName();
+                    if ((!entryName.contains("$")) && entryName.endsWith(".class")) {
+                        String className = entryName.substring(0, entryName.length() - ".class".length()).replace("/", ".");
+                        result.add(className);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return result;
     }
 
     @Test

@@ -52,6 +52,8 @@ public class Config {
 
     private List<Rule> rules;
 
+    private String callgraphAlgorithm = "CHA";
+
 
     public static class Rule {
         private String name;
@@ -92,6 +94,14 @@ public class Config {
         this.rules = rules;
     }
 
+    public String getCallgraphAlgorithm() {
+        return callgraphAlgorithm;
+    }
+
+    public void setCallgraphAlgorithm(String callgraphAlgorithm) {
+        this.callgraphAlgorithm = callgraphAlgorithm;
+    }
+
     public String getProject() {
         return project;
     }
@@ -119,6 +129,7 @@ public class Config {
     public void setAutoDetect(boolean autoDetect) {
         this.autoDetect = autoDetect;
     }
+
 
     public void autoConfig() {
         if (autoDetect) {

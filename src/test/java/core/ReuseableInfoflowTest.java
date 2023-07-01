@@ -137,7 +137,7 @@ public class ReuseableInfoflowTest {
         List<String> sinks = c.getSinks();
         String libPath = c.getLibPath();
 
-        ReuseableInfoflow infoflow = IFFactory.buildReuseable(c.getExcludes().stream().toList(), c.getPathReconstructionTimeout());
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(appPath, c.getExcludes().stream().toList(), c.getPathReconstructionTimeout());
 
         infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
         List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), c.getProject());
@@ -177,7 +177,7 @@ public class ReuseableInfoflowTest {
         List<String> sinks = c.getSinks();
         String libPath = c.getLibPath();
 
-        ReuseableInfoflow infoflow = IFFactory.buildReuseable(c.getExcludes().stream().toList());
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(appPath, c.getExcludes().stream().toList());
 
         infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
         List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), c.getProject());
@@ -205,7 +205,7 @@ public class ReuseableInfoflowTest {
         List<String> sinks = c.getSinks();
         String libPath = c.getLibPath();
 
-        ReuseableInfoflow infoflow = IFFactory.buildReuseable(c.getExcludes().stream().toList());
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(appPath, c.getExcludes().stream().toList());
 
         infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
         List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), c.getProject());
@@ -236,7 +236,7 @@ public class ReuseableInfoflowTest {
         String libPath = c.getLibPath();
         String project = c.getProject();
 
-        ReuseableInfoflow infoflow = IFFactory.buildReuseable(c.getExcludes().stream().toList());
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(appPath, c.getExcludes().stream().toList());
 
         List<RuleResult> ruleResult = new ArrayList<>();
         for (Config.Rule r : c.getRules()) {
@@ -260,8 +260,8 @@ public class ReuseableInfoflowTest {
         ClassPathResource defaultConfig = new ClassPathResource("defaultconfig.json");
         Config c = gson.fromJson(new InputStreamReader(defaultConfig.getInputStream()), Config.class);
 
-        c.setProject("C:\\dev\\ifpc-testcase\\WebGoat-5.0");
-        c.setJdk("C:\\dev\\ifpc-testcase\\jdk\\rt.jar");
+        c.setProject("test");
+        c.setJdk("/home/ran/Documents/work/thusa2/ifpc-testcase/jdk/rt.jar");
         if (c.isAutoDetect()) {
             c.autoConfig();
         }
@@ -271,7 +271,7 @@ public class ReuseableInfoflowTest {
         String libPath = c.getLibPath();
         String project = c.getProject();
 
-        ReuseableInfoflow infoflow = IFFactory.buildReuseable(c.getExcludes().stream().toList());
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(appPath, c.getExcludes().stream().toList(), c.getCallgraphAlgorithm());
 
         List<RuleResult> ruleResult = new ArrayList<>();
         for (Config.Rule r : c.getRules()) {
@@ -289,4 +289,6 @@ public class ReuseableInfoflowTest {
         }
         PathOptimization.deteleTempdir(c.getTempDir());
     }
+
+
 }
