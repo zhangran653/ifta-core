@@ -260,7 +260,7 @@ public class ReuseableInfoflowTest {
         ClassPathResource defaultConfig = new ClassPathResource("defaultconfig.json");
         Config c = gson.fromJson(new InputStreamReader(defaultConfig.getInputStream()), Config.class);
 
-        c.setProject("test");
+        c.setProject("/home/ran/Documents/work/thusa2/jsp-demo2");
         c.setJdk("/home/ran/Documents/work/thusa2/ifpc-testcase/jdk/rt.jar");
         if (c.isAutoDetect()) {
             c.autoConfig();
