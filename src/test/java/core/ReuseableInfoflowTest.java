@@ -14,6 +14,7 @@ import ta.Config;
 import ta.DetectedResult;
 import ta.ReuseableInfoflow;
 import ta.RuleResult;
+import utils.ClassPathResource;
 import utils.IFFactory;
 import utils.PathOptimization;
 
@@ -224,7 +225,6 @@ public class ReuseableInfoflowTest {
     @Test
     public void test6() throws FileNotFoundException {
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-        // sql注入
         Config c = gson.fromJson(new FileReader("defaultconfig.json"), Config.class);
 
         if (c.isAutoDetect()) {
@@ -252,5 +252,41 @@ public class ReuseableInfoflowTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void test7() throws IOException {
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        ClassPathResource defaultConfig = new ClassPathResource("defaultconfig.json");
+        Config c = gson.fromJson(new InputStreamReader(defaultConfig.getInputStream()), Config.class);
+
+        c.setProject("C:\\dev\\ifpc-testcase\\WebGoat-5.0");
+        c.setJdk("C:\\dev\\ifpc-testcase\\jdk\\rt.jar");
+        if (c.isAutoDetect()) {
+            c.autoConfig();
+        }
+
+        String appPath = c.getAppPath();
+        List<String> epoints = c.getEpoints();
+        String libPath = c.getLibPath();
+        String project = c.getProject();
+
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(c.getExcludes().stream().toList());
+
+        List<RuleResult> ruleResult = new ArrayList<>();
+        for (Config.Rule r : c.getRules()) {
+            infoflow.computeInfoflow(appPath, libPath, epoints, r.getSources(), r.getSinks());
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), project);
+            ruleResult.add(new RuleResult(r.getName(), results));
+        }
+        try {
+            String json = gson.toJson(ruleResult);
+            Writer writer = new FileWriter("rule_result.json");
+            writer.write(json);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        PathOptimization.deteleTempdir(c.getTempDir());
     }
 }
