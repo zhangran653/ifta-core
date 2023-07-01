@@ -25,9 +25,9 @@ public class Config {
     private boolean autoAddEntry = true;
 
     private List<String> epoints = Collections.emptyList();
-
+    @Deprecated
     private List<String> sources = Collections.emptyList();
-
+    @Deprecated
     private List<String> sinks = Collections.emptyList();
 
     private String appPath;
@@ -46,7 +46,7 @@ public class Config {
 
     private String jdk;
 
-    private boolean autoDetect;
+    private boolean autoDetect = true;
 
     private String tempDir;
 
@@ -192,8 +192,7 @@ public class Config {
                     JarEntry entry = entries.nextElement();
                     String entryName = entry.getName();
                     if ((!entryName.contains("$")) && entryName.endsWith(".class")) {
-                        String className = entryName.substring(0, entryName.length() - ".class".length())
-                                .replace("/", ".");
+                        String className = entryName.substring(0, entryName.length() - ".class".length()).replace("/", ".");
                         result.add(className);
                     }
                 }
@@ -301,6 +300,7 @@ public class Config {
         this.epoints = epoints;
     }
 
+    @Deprecated
     public List<String> getSources() {
         return sources;
     }
@@ -317,6 +317,7 @@ public class Config {
         this.tempDir = tempDir;
     }
 
+    @Deprecated
     public List<String> getSinks() {
         return sinks;
     }
