@@ -4,12 +4,31 @@ public class PathUnit {
     private String hint;
     private String file;
 
+    private String jspFile;
     private String javaClass;
     private String function;
     private String jimpleStmt;
     private String javaStmt;
     private String jspStmt;
     private int line;
+
+    private Integer jspLine;
+
+    public String getJspFile() {
+        return jspFile;
+    }
+
+    public void setJspFile(String jspFile) {
+        this.jspFile = jspFile;
+    }
+
+    public Integer getJspLine() {
+        return jspLine;
+    }
+
+    public void setJspLine(int jspLine) {
+        this.jspLine = jspLine;
+    }
 
     public String getJavaClass() {
         return javaClass;

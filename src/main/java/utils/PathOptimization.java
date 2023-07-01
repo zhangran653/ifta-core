@@ -5,6 +5,8 @@ import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.DirectoryScanner;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
 import soot.SootMethod;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
@@ -17,7 +19,9 @@ import soot.tagkit.LineNumberTag;
 import ta.DetectedResult;
 import ta.PathUnit;
 
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -54,10 +58,61 @@ public class PathOptimization {
             if (projectDir != null && !projectDir.isBlank()) {
                 String file = locateSourceFile(projectDir, unit.getJavaClass());
                 unit.setFile(file);
+                if (unit.getJavaClass().endsWith("_jsp") && unit.getLine() != -1) {
+                    String classPath = packageToDirString(unit.getJavaClass()) + ".class";
+                    List<String> sourceFile = filterFile(projectDir, new String[]{"**/" + classPath});
+                    if (sourceFile.isEmpty()) {
+                        continue;
+                    }
+                    String sourceDebug = readSourceDebug(Paths.get(projectDir,sourceFile.get(0)).toString());
+                    if (sourceDebug == null) {
+                        continue;
+                    }
+                    SmapInfo smapInfo = getSmapInfo(sourceDebug);
+                    List<SmapInfo.LineInfo.LineMapping> jspLineMap = smapInfo.getMapping();
+                    for (var m : jspLineMap) {
+                        if (m.getOutputBeginLine() <= unit.getLine() && unit.getLine() <= m.getOutputEndLine()) {
+                            unit.setJspLine(m.getInputLine());
+                        }
+                    }
+                    List<String> jspFile = filterFile(projectDir, new String[]{"**/" + smapInfo.getSourceFilePath()});
+                    if (!jspFile.isEmpty()) {
+                        unit.setJspFile(jspFile.get(0));
+                    }
+
+                }
             }
             path.add(unit);
         }
         return path;
+    }
+
+    public static SmapInfo getSmapInfo(String sourceDebug) {
+        SmapInfo smapInfo = new SmapInfo();
+        List<String> smap = Arrays.stream(sourceDebug.split("\n")).toList();
+        smapInfo.setSourceFilePath(getSourceJspPath(smap));
+        for (var m : getLineMapping(smap)) {
+            smapInfo.addLineInfo(m);
+        }
+        return smapInfo;
+    }
+
+    public static String getSourceJspPath(List<String> smap) {
+        for (int i = 0; i < smap.size(); i++) {
+            if (smap.get(i).equals("*F")) {
+                return smap.get(i + 2);
+            }
+        }
+        return null;
+    }
+
+    public static List<String> getLineMapping(List<String> smap) {
+        for (int i = 0; i < smap.size(); i++) {
+            if (smap.get(i).equals("*L")) {
+                return smap.subList(i + 1, smap.size() - 1);
+            }
+        }
+        return Collections.emptyList();
     }
 
     public static List<String> pathStm(ResultSourceInfo source) {
@@ -186,5 +241,17 @@ public class PathOptimization {
         return sourceFile.get(0);
     }
 
+
+    public static String readSourceDebug(String path) {
+        ClassReader reader = null;
+        try {
+            reader = new ClassReader(new DataInputStream(new FileInputStream(path)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        ClassNode cn = new ClassNode();
+        reader.accept(cn, 0);
+        return cn.sourceDebug;
+    }
 
 }
