@@ -4,7 +4,7 @@
   "rules": [
     {
       "name": "命令注入",
-      "sources": [
+      "sources" : [
         "<java.net.URLConnection: java.io.InputStream getInputStream()>",
         "<java.net.URLConnection: java.lang.Object getContent()>",
         "<java.net.URLConnection: java.lang.Object getContent(java.lang.Class[])>",
@@ -119,7 +119,7 @@
         "<java.net.URL: java.lang.Object getContent(java.lang.Class[])>",
         "<javax.servlet.http.HttpSession: java.lang.Object getAttribute(java.lang.String)>"
       ],
-      "sinks": [
+      "sinks" : [
         "<java.lang.ClassLoader: java.lang.Class defineClass(byte[],int,int)>",
         "<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int)>",
         "<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.ProtectDomain)>",
