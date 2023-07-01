@@ -14,8 +14,6 @@ import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.results.ResultSinkInfo;
 import soot.jimple.infoflow.results.ResultSourceInfo;
 import soot.jimple.infoflow.solver.cfg.IInfoflowCFG;
-import soot.tagkit.BytecodeOffsetTag;
-import soot.tagkit.LineNumberTag;
 import ta.DetectedResult;
 import ta.PathUnit;
 

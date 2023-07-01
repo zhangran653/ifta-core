@@ -154,6 +154,26 @@ public class SmapTest {
 
     @Test
     public void test4() {
+        /**
+         *      <dependency>
+         *             <groupId>com.liferay</groupId>
+         *             <artifactId>com.liferay.gradle.plugins.jasper.jspc</artifactId>
+         *             <version>2.0.13</version>
+         *         </dependency>
+         */
+        /**
+         *JspC jspc = new JspC();
+         *jspc.setUriroot("D:\\jsp-demo");//web application root directory
+         *jspc.setOutputDir("./compiledjsp");//.java file and .class file output directory
+         *         //jspc.setJspFiles("welcome.jsp");//jsp to compile
+         *jspc.setCompile(true);// Whether to compile false or not specified, only generate .java files
+         *jspc.setSmapDumped(false);
+         *jspc.setSmapSuppressed(false);
+         *jspc.setIgnoreJspFragmentErrors(true);
+         *jspc.execute();
+         */
 
+        // TODO Jspc compile jsp to java. Incompatible with java 17+.
+        // Anyway the jsp compiler should be in a standalone module for best.
     }
 }
