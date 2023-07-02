@@ -1,5 +1,6 @@
 package ta;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import soot.G;
@@ -7,6 +8,7 @@ import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
 import soot.options.Options;
+import utils.FileUtility;
 import utils.PathOptimization;
 
 import java.io.File;
@@ -19,9 +21,6 @@ import java.util.jar.JarFile;
 
 public class Config {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    public final String entryFormatter = "<%s: void _jspService(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>";
-
     private boolean autoAddEntry = true;
 
     private List<String> epoints = Collections.emptyList();
@@ -54,36 +53,14 @@ public class Config {
 
     private String callgraphAlgorithm = "CHA";
 
+    private boolean isProjectAJar = false;
 
-    public static class Rule {
-        private String name;
-        private List<String> sources = Collections.emptyList();
+    public boolean isProjectAJar() {
+        return isProjectAJar;
+    }
 
-        private List<String> sinks = Collections.emptyList();
-
-        public List<String> getSources() {
-            return sources;
-        }
-
-        public void setSources(List<String> sources) {
-            this.sources = sources;
-        }
-
-        public List<String> getSinks() {
-            return sinks;
-        }
-
-        public void setSinks(List<String> sinks) {
-            this.sinks = sinks;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
+    public void setProjectAJar(boolean projectAJar) {
+        isProjectAJar = projectAJar;
     }
 
     public List<Rule> getRules() {
@@ -106,20 +83,20 @@ public class Config {
         return project;
     }
 
-    public String getEntryFormatter() {
-        return entryFormatter;
+    public void setProject(String project) {
+        this.project = project;
     }
 
     public boolean isAutoAddEntry() {
         return autoAddEntry;
     }
 
-    public void setAutoAddJspEntry(boolean autoAddJspEntry) {
-        this.autoAddEntry = autoAddJspEntry;
+    public void setAutoAddEntry(boolean autoAddEntry) {
+        this.autoAddEntry = autoAddEntry;
     }
 
-    public void setProject(String project) {
-        this.project = project;
+    public void setAutoAddJspEntry(boolean autoAddJspEntry) {
+        this.autoAddEntry = autoAddJspEntry;
     }
 
     public boolean isAutoDetect() {
@@ -142,50 +119,93 @@ public class Config {
             }
             if (!f.isDirectory()) {
                 // TODO support jar file.
-                throw new AssertionError("project is not a directory!");
-            }
-
-            // filter all .class file
-            List<String> classFiles = PathOptimization.filterFile(project, new String[]{"**/*.class"});
-            List<String> jarFiles = PathOptimization.filterFile(project, new String[]{"**/*.jar"});
-            // add rt.jar to lib path
-            libPath = String.join(File.pathSeparator, jarFiles.stream().map(j -> Paths.get(project, j).toString()).toList());
-            libPath += File.pathSeparator + jdk;
-            // copy all .class to temporary directory.
-            Path tmpdir = PathOptimization.createTempdir();
-            logger.info("create temp dir: {}", tmpdir);
-            this.tempDir = tmpdir.toString();
-            Set<String> copied = new HashSet<>();
-            List<String> javaClasses = new ArrayList<>();
-            try {
-                for (var file : classFiles) {
-                    String absPath = Paths.get(project, file).toString();
-                    String md5 = PathOptimization.md5(absPath);
-                    if (copied.contains(md5)) {
-                        continue;
-                    }
-                    File o = new File(absPath);
-                    String packageName = PathOptimization.classPackageName(absPath);
-                    String className = PathOptimization.className(absPath);
-                    if (packageName == null) {
-                        continue;
-                    }
-                    if (className != null) {
-                        javaClasses.add(className);
-                    }
-                    Path d = Paths.get(tmpdir.toString(), PathOptimization.packageToDirString(packageName), o.getName());
-                    logger.info("copy {} to {}", o.getPath(), d);
-                    PathOptimization.copy(o, d.toFile());
-                    copied.add(md5);
+                if (!(f.getPath().endsWith(".jar") || f.getPath().endsWith(".zip"))) {
+                    throw new AssertionError("project is not a directory and not a jar or zip!");
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                this.isProjectAJar = true;
+                Path tmpdir = PathOptimization.createTempdir();
+                logger.info("create temp dir: {}", tmpdir);
+                this.tempDir = tmpdir.toString();
+                String projectName = FilenameUtils.removeExtension(Path.of(project).getFileName().toString());
+                Path workDir = Path.of(this.tempDir, projectName);
+                FileUtility.flatExtractJar(project, workDir.toString());
+                // filter all .class file
+                List<String> classFiles = PathOptimization.filterFile(workDir.toString(), new String[]{"**/*.class"});
+                List<String> jarFiles = PathOptimization.filterFile(workDir.toString(), new String[]{"**/*.jar"});
+                // add rt.jar to lib path
+                libPath = String.join(File.pathSeparator, jarFiles.stream().map(j -> Paths.get(workDir.toString(), j).toString()).toList());
+                if (libPath.isBlank()) {
+                    libPath += jdk;
+                } else {
+                    libPath += File.pathSeparator + jdk;
+                }
+
+                List<String> javaClasses = new ArrayList<>();
+                try {
+                    for (var file : classFiles) {
+                        String absPath = Paths.get(workDir.toString(), file).toString();
+                        String className = PathOptimization.className(absPath);
+                        if (className != null) {
+                            javaClasses.add(className);
+                        }
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                appPath = workDir.toString();
+                List<String> libClasses = scanLibClasses(libPath);
+                libClasses.removeAll(javaClasses);
+                excludes.addAll(libClasses);
+                addEntry();
+            } else {
+                // copy all .class to temporary directory.
+                Path tmpdir = PathOptimization.createTempdir();
+                logger.info("create temp dir: {}", tmpdir);
+                this.tempDir = tmpdir.toString();
+                // filter all .class file
+                List<String> classFiles = PathOptimization.filterFile(project, new String[]{"**/*.class"});
+                List<String> jarFiles = PathOptimization.filterFile(project, new String[]{"**/*.jar"});
+                // add rt.jar to lib path
+                libPath = String.join(File.pathSeparator, jarFiles.stream().map(j -> Paths.get(project, j).toString()).toList());
+                if (libPath.isBlank()) {
+                    libPath += jdk;
+                } else {
+                    libPath += File.pathSeparator + jdk;
+                }
+
+                Set<String> copied = new HashSet<>();
+                List<String> javaClasses = new ArrayList<>();
+                try {
+                    for (var file : classFiles) {
+                        String absPath = Paths.get(project, file).toString();
+                        String md5 = PathOptimization.md5(absPath);
+                        if (copied.contains(md5)) {
+                            continue;
+                        }
+                        File o = new File(absPath);
+                        String packageName = PathOptimization.classPackageName(absPath);
+                        String className = PathOptimization.className(absPath);
+                        if (packageName == null) {
+                            continue;
+                        }
+                        if (className != null) {
+                            javaClasses.add(className);
+                        }
+                        Path d = Paths.get(this.tempDir, PathOptimization.packageToDirString(packageName), o.getName());
+                        logger.info("copy {} to {}", o.getPath(), d);
+                        PathOptimization.copy(o, d.toFile());
+                        copied.add(md5);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                appPath = tempDir;
+                List<String> libClasses = scanLibClasses(libPath);
+                libClasses.removeAll(javaClasses);
+                excludes.addAll(libClasses);
+                addEntry();
+
             }
-            appPath = tempDir;
-            List<String> libClasses = scanLibClasses(libPath);
-            libClasses.removeAll(javaClasses);
-            excludes.addAll(libClasses);
-            addEntry();
 
         }
     }
@@ -321,10 +341,6 @@ public class Config {
         this.libPaths = libPaths;
     }
 
-    public void setAutoAddEntry(boolean autoAddEntry) {
-        this.autoAddEntry = autoAddEntry;
-    }
-
     public Set<String> getExcludes() {
         return excludes;
     }
@@ -339,5 +355,36 @@ public class Config {
 
     public void setJdk(String jdk) {
         this.jdk = jdk;
+    }
+
+    public static class Rule {
+        private String name;
+        private List<String> sources = Collections.emptyList();
+
+        private List<String> sinks = Collections.emptyList();
+
+        public List<String> getSources() {
+            return sources;
+        }
+
+        public void setSources(List<String> sources) {
+            this.sources = sources;
+        }
+
+        public List<String> getSinks() {
+            return sinks;
+        }
+
+        public void setSinks(List<String> sinks) {
+            this.sinks = sinks;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }

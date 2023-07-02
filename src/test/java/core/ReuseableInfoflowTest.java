@@ -262,8 +262,9 @@ public class ReuseableInfoflowTest {
 
 //        c.setProject("/home/ran/Documents/work/thusa2/jsp-demo2");
 //        c.setJdk("/home/ran/Documents/work/thusa2/ifpc-testcase/jdk/rt.jar");
-        c.setProject("D:\\ifpc-testcase\\WebGoat-5.0");
+        // c.setProject("D:\\ifpc-testcase\\WebGoat-5.0");
         //c.setProject("C:\\dev\\sa-engine");
+        c.setProject("D:\\jsp-demo.zip");
         c.setJdk("D:\\ifpc-testcase\\jdk\\rt.jar");
         if (c.isAutoDetect()) {
             c.autoConfig();
@@ -273,13 +274,55 @@ public class ReuseableInfoflowTest {
         List<String> epoints = c.getEpoints();
         String libPath = c.getLibPath();
         String project = c.getProject();
+        String tempdir = c.getTempDir();
 
         ReuseableInfoflow infoflow = IFFactory.buildReuseable(appPath, c.getExcludes().stream().toList(), c.getCallgraphAlgorithm());
 
         List<RuleResult> ruleResult = new ArrayList<>();
         for (Config.Rule r : c.getRules()) {
             infoflow.computeInfoflow(appPath, libPath, epoints, r.getSources(), r.getSinks());
-            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), project);
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), c.isProjectAJar() ? tempdir : project);
+            ruleResult.add(new RuleResult(r.getName(), results));
+        }
+        try {
+            String json = gson.toJson(ruleResult);
+            Writer writer = new FileWriter("rule_result.json");
+            writer.write(json);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        PathOptimization.deteleTempdir(c.getTempDir());
+    }
+
+    @Test
+    public void test8() throws IOException {
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        ClassPathResource defaultConfig = new ClassPathResource("defaultconfig.json");
+        Config c = gson.fromJson(new InputStreamReader(defaultConfig.getInputStream()), Config.class);
+
+//        c.setProject("/home/ran/Documents/work/thusa2/jsp-demo2");
+//        c.setJdk("/home/ran/Documents/work/thusa2/ifpc-testcase/jdk/rt.jar");
+        c.setProject("D:\\ifpc-testcase\\WebGoat-5.0");
+        //c.setProject("C:\\dev\\sa-engine");
+        //c.setProject("D:\\jsp-demo.zip");
+        c.setJdk("D:\\ifpc-testcase\\jdk\\rt.jar");
+        if (c.isAutoDetect()) {
+            c.autoConfig();
+        }
+
+        String appPath = c.getAppPath();
+        List<String> epoints = c.getEpoints();
+        String libPath = c.getLibPath();
+        String project = c.getProject();
+        String tempdir = c.getTempDir();
+
+        ReuseableInfoflow infoflow = IFFactory.buildReuseable(appPath, c.getExcludes().stream().toList(), c.getCallgraphAlgorithm());
+
+        List<RuleResult> ruleResult = new ArrayList<>();
+        for (Config.Rule r : c.getRules()) {
+            infoflow.computeInfoflow(appPath, libPath, epoints, r.getSources(), r.getSinks());
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), c.isProjectAJar() ? tempdir : project);
             ruleResult.add(new RuleResult(r.getName(), results));
         }
         try {

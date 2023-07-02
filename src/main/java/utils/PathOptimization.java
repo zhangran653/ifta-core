@@ -53,7 +53,7 @@ public class PathOptimization {
             unit.setJimpleStmt(p.toString());
             unit.setLine(p.getJavaSourceStartLineNumber());
             // java source file
-            if (projectDir != null && !projectDir.isBlank()) {
+            if (projectDir != null && !projectDir.isBlank() && !(projectDir.endsWith(".jar") || projectDir.endsWith(".zip"))) {
                 String file = locateSourceFile(projectDir, unit.getJavaClass());
                 unit.setFile(file);
                 if (unit.getJavaClass().endsWith("_jsp") && unit.getLine() != -1) {
@@ -62,7 +62,7 @@ public class PathOptimization {
                     if (sourceFile.isEmpty()) {
                         continue;
                     }
-                    String sourceDebug = readSourceDebug(Paths.get(projectDir,sourceFile.get(0)).toString());
+                    String sourceDebug = readSourceDebug(Paths.get(projectDir, sourceFile.get(0)).toString());
                     if (sourceDebug == null) {
                         continue;
                     }
