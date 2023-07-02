@@ -501,5 +501,6 @@
   ],
   "autoDetect": true,
   "project": "",
-  "jdk": ""
+  "jdk": "",
+  "callgraphAlgorithm": "SPARK"
 }

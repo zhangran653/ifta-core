@@ -72,7 +72,27 @@ public class EntrySelectorManager {
         }
         return entries;
     };
-    public List<EntrySelector> selectors = List.of(jspServiceEntry, annotationTagEntry);
+
+    EntrySelector publicStaticOrMainEntry = (classFilePath) -> {
+        List<String> entries = new ArrayList<>();
+        String fullClassName = PathOptimization.className(classFilePath);
+        try {
+            SootClass sc = Scene.v().getSootClass(fullClassName);
+            sc.getMethods().forEach(m -> {
+                if ((m.isPublic() && m.isStatic() && !m.isJavaLibraryMethod()) || m.isEntryMethod() || m.isMain()) {
+                    logger.info("add {} to entry points", m.getSignature());
+                    entries.add(m.getSignature());
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return entries;
+    };
+
+    public List<EntrySelector> selectors = List.of(jspServiceEntry, annotationTagEntry, publicStaticOrMainEntry);
+
 
     public EntrySelectorManager(String processDir) {
         G.reset();
