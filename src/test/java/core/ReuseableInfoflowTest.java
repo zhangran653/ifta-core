@@ -280,7 +280,7 @@ public class ReuseableInfoflowTest {
         List<RuleResult> ruleResult = new ArrayList<>();
         for (Config.Rule r : c.getRules()) {
             infoflow.computeInfoflow(appPath, libPath, epoints, r.getSources(), r.getSinks());
-            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), c.isProjectAJar() ? tempdir : project);
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), project);
             ruleResult.add(new RuleResult(r.getName(), results));
         }
         try {
@@ -321,7 +321,7 @@ public class ReuseableInfoflowTest {
         List<RuleResult> ruleResult = new ArrayList<>();
         for (Config.Rule r : c.getRules()) {
             infoflow.computeInfoflow(appPath, libPath, epoints, r.getSources(), r.getSinks());
-            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), c.isProjectAJar() ? tempdir : project);
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), project);
             ruleResult.add(new RuleResult(r.getName(), results));
         }
         try {

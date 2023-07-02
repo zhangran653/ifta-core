@@ -114,6 +114,7 @@ public class Config {
             if (!f.exists()) {
                 throw new AssertionError("project not found!");
             }
+            String extractTemp = null;
             if (!f.isDirectory()) {
                 // TODO support jar file.
                 if (!(f.getPath().endsWith(".jar") || f.getPath().endsWith(".zip"))) {
@@ -121,89 +122,62 @@ public class Config {
                 }
                 this.isProjectAJar = true;
                 Path tmpdir = PathOptimization.createTempdir();
-                logger.info("create temp dir: {}", tmpdir);
-                this.tempDir = tmpdir.toString();
+                extractTemp = tempDir;
+                logger.info("create temp dir for extract: {}", tmpdir);
                 String projectName = FilenameUtils.removeExtension(Path.of(project).getFileName().toString());
-                Path workDir = Path.of(this.tempDir, projectName);
-                FileUtility.flatExtractJar(project, workDir.toString());
-                // filter all .class file
-                List<String> classFiles = PathOptimization.filterFile(workDir.toString(), new String[]{"**/*.class"});
-                List<String> jarFiles = PathOptimization.filterFile(workDir.toString(), new String[]{"**/*.jar"});
-                // add rt.jar to lib path
-                libPath = String.join(File.pathSeparator, jarFiles.stream().map(j -> Paths.get(workDir.toString(), j).toString()).toList());
-                if (libPath.isBlank()) {
-                    libPath += jdk;
-                } else {
-                    libPath += File.pathSeparator + jdk;
-                }
-
-                List<String> javaClasses = new ArrayList<>();
-                try {
-                    for (var file : classFiles) {
-                        String absPath = Paths.get(workDir.toString(), file).toString();
-                        String className = PathOptimization.className(absPath);
-                        if (className != null) {
-                            javaClasses.add(className);
-                        }
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-                appPath = workDir.toString();
-                List<String> libClasses = scanLibClasses(libPath);
-                libClasses.removeAll(javaClasses);
-                excludes.addAll(libClasses);
-                addEntry();
+                Path workDir = Path.of(tmpdir.toString(), projectName);
+                FileUtility.extractJar(project, workDir.toString());
+                this.project = workDir.toString();
+            }
+            // copy all .class to temporary directory.
+            Path tmpdir = PathOptimization.createTempdir();
+            logger.info("create temp dir: {}", tmpdir);
+            this.tempDir = tmpdir.toString();
+            // filter all .class file
+            List<String> classFiles = PathOptimization.filterFile(project, new String[]{"**/*.class"});
+            List<String> jarFiles = PathOptimization.filterFile(project, new String[]{"**/*.jar"});
+            // add rt.jar to lib path
+            libPath = String.join(File.pathSeparator, jarFiles.stream().map(j -> Paths.get(project, j).toString()).toList());
+            if (libPath.isBlank()) {
+                libPath += jdk;
             } else {
-                // copy all .class to temporary directory.
-                Path tmpdir = PathOptimization.createTempdir();
-                logger.info("create temp dir: {}", tmpdir);
-                this.tempDir = tmpdir.toString();
-                // filter all .class file
-                List<String> classFiles = PathOptimization.filterFile(project, new String[]{"**/*.class"});
-                List<String> jarFiles = PathOptimization.filterFile(project, new String[]{"**/*.jar"});
-                // add rt.jar to lib path
-                libPath = String.join(File.pathSeparator, jarFiles.stream().map(j -> Paths.get(project, j).toString()).toList());
-                if (libPath.isBlank()) {
-                    libPath += jdk;
-                } else {
-                    libPath += File.pathSeparator + jdk;
-                }
-
-                Set<String> copied = new HashSet<>();
-                List<String> javaClasses = new ArrayList<>();
-                try {
-                    for (var file : classFiles) {
-                        String absPath = Paths.get(project, file).toString();
-                        String md5 = PathOptimization.md5(absPath);
-                        if (copied.contains(md5)) {
-                            continue;
-                        }
-                        File o = new File(absPath);
-                        String packageName = PathOptimization.classPackageName(absPath);
-                        String className = PathOptimization.className(absPath);
-                        if (packageName == null) {
-                            continue;
-                        }
-                        if (className != null) {
-                            javaClasses.add(className);
-                        }
-                        Path d = Paths.get(this.tempDir, PathOptimization.packageToDirString(packageName), o.getName());
-                        logger.info("copy {} to {}", o.getPath(), d);
-                        PathOptimization.copy(o, d.toFile());
-                        copied.add(md5);
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-                appPath = tempDir;
-                List<String> libClasses = scanLibClasses(libPath);
-                libClasses.removeAll(javaClasses);
-                excludes.addAll(libClasses);
-                addEntry();
-
+                libPath += File.pathSeparator + jdk;
             }
 
+            Set<String> copied = new HashSet<>();
+            List<String> javaClasses = new ArrayList<>();
+            try {
+                for (var file : classFiles) {
+                    String absPath = Paths.get(project, file).toString();
+                    String md5 = PathOptimization.md5(absPath);
+                    if (copied.contains(md5)) {
+                        continue;
+                    }
+                    File o = new File(absPath);
+                    String packageName = PathOptimization.classPackageName(absPath);
+                    String className = PathOptimization.className(absPath);
+                    if (packageName == null) {
+                        continue;
+                    }
+                    if (className != null) {
+                        javaClasses.add(className);
+                    }
+                    Path d = Paths.get(this.tempDir, PathOptimization.packageToDirString(packageName), o.getName());
+                    logger.info("copy {} to {}", o.getPath(), d);
+                    PathOptimization.copy(o, d.toFile());
+                    copied.add(md5);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            appPath = tempDir;
+            List<String> libClasses = scanLibClasses(libPath);
+            libClasses.removeAll(javaClasses);
+            excludes.addAll(libClasses);
+            addEntry();
+            if (extractTemp != null) {
+                PathOptimization.deteleTempdir(extractTemp);
+            }
         }
     }
 

@@ -161,8 +161,7 @@ public class AnalysisExecutor {
         List<RuleResult> ruleResult = new ArrayList<>();
         for (Config.Rule r : config.getRules()) {
             infoflow.computeInfoflow(appPath, libPath, epoints, r.getSources(), r.getSinks());
-            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(),
-                    config.isProjectAJar() ? tempdir : project, trackSourceFile);
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), project, trackSourceFile);
             ruleResult.add(new RuleResult(r.getName(), results));
         }
         this.ruleResult = ruleResult;
