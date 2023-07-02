@@ -18,7 +18,7 @@ public class AnalysisExecutorTest {
                 .setProject(project)
                 .setJDK(jdk)
                 // default is "SPARK"
-                .setCallGraphAlgorithm("CHA")
+                .setCallGraphAlgorithm("SPARK")
                 // Track source file and calculate line number of jsp. Default false.
                 .trackSourceFile(true)
                 // Path reconstruction time out.
