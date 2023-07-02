@@ -21,6 +21,9 @@ public class AnalysisExecutorTest {
                 .setCallGraphAlgorithm("CHA")
                 // Track source file and calculate line number of jsp. Default false.
                 .trackSourceFile(true)
+                // Path reconstruction time out.
+                .setTimeout(180)
+                // write detect result to file.
                 .writeOutput(true)
                 .setOutput(result)
                 .analysis();
@@ -48,5 +51,10 @@ public class AnalysisExecutorTest {
         // detect result.
         var ruleResult = analysisExecutor.getRuleResult();
         System.out.println(ruleResult);
+    }
+
+    @Test
+    public void test3() {
+        // TODO Make entry point selector configurable.
     }
 }

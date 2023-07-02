@@ -11,7 +11,10 @@ import soot.tagkit.AnnotationTag;
 import soot.tagkit.VisibilityAnnotationTag;
 import utils.PathOptimization;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 
 public class EntrySelectorManager {
 

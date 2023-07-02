@@ -175,5 +175,6 @@ public class SmapTest {
 
         // TODO Jspc compile jsp to java. Incompatible with java 17+.
         // Anyway the jsp compiler should be in a standalone module for best.
+        // TODO Support parse from .smap files. But is it necessary? Is there any chance that JSP classes won't contain "sourceDebug"?
     }
 }

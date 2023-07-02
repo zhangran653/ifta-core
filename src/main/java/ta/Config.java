@@ -3,11 +3,6 @@ package ta;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import soot.G;
-import soot.PackManager;
-import soot.Scene;
-import soot.SootClass;
-import soot.options.Options;
 import utils.FileUtility;
 import utils.PathOptimization;
 
@@ -24,6 +19,8 @@ public class Config {
     private boolean autoAddEntry = true;
 
     private List<String> epoints = Collections.emptyList();
+
+    //TODO Optimize deprecated. For now keep them to pass tests.
     @Deprecated
     private List<String> sources = Collections.emptyList();
     @Deprecated

@@ -4,7 +4,6 @@ import soot.jimple.infoflow.InfoflowConfiguration;
 import soot.jimple.infoflow.config.IInfoflowConfig;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
-import ta.Config;
 import ta.ReuseableInfoflow;
 
 import java.io.File;
@@ -12,7 +11,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 public class IFFactory {
 

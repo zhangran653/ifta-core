@@ -98,6 +98,11 @@ public class AnalysisExecutor {
         return this;
     }
 
+    public AnalysisExecutor setTimeout(int timeout) {
+        this.config.setPathReconstructionTimeout(timeout);
+        return this;
+    }
+
     public AnalysisExecutor writeOutput(boolean writeOutput) {
         this.writeOutput = writeOutput;
         return this;
