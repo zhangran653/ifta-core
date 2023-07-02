@@ -17,6 +17,10 @@ public class AnalysisExecutorTest {
                 .withDefaultConfig()
                 .setProject(project)
                 .setJDK(jdk)
+                // default is "SPARK"
+                .setCallGraphAlgorithm("CHA")
+                // Track source file and calculate line number of jsp. Default false.
+                .trackSourceFile(true)
                 .writeOutput(true)
                 .setOutput(result)
                 .analysis();
@@ -34,6 +38,9 @@ public class AnalysisExecutorTest {
         AnalysisExecutor analysisExecutor = AnalysisExecutor
                 .newInstance()
                 .withConfig(configPath)
+                .setCallGraphAlgorithm("SPARK")
+                // Track source file and calculate line number of jsp. Default false.
+                .trackSourceFile(true)
                 .writeOutput(true)
                 .setOutput(result)
                 .analysis();

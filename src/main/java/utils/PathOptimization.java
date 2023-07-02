@@ -40,6 +40,10 @@ public class PathOptimization {
     }
 
     public static List<PathUnit> resultPath(IInfoflowCFG icfg, ResultSourceInfo source, ResultSinkInfo sink, String projectDir) {
+        return resultPath(icfg, source, sink, projectDir, false);
+    }
+
+    public static List<PathUnit> resultPath(IInfoflowCFG icfg, ResultSourceInfo source, ResultSinkInfo sink, String projectDir, boolean trackSourceFile) {
         ArrayList<PathUnit> path = new ArrayList<>();
         Stmt[] pathStmts = source.getPath();
         if (pathStmts == null) {
@@ -53,7 +57,7 @@ public class PathOptimization {
             unit.setJimpleStmt(p.toString());
             unit.setLine(p.getJavaSourceStartLineNumber());
             // java source file
-            if (projectDir != null && !projectDir.isBlank() && !(projectDir.endsWith(".jar") || projectDir.endsWith(".zip"))) {
+            if (trackSourceFile && projectDir != null && !projectDir.isBlank() && !(projectDir.endsWith(".jar") || projectDir.endsWith(".zip"))) {
                 String file = locateSourceFile(projectDir, unit.getJavaClass());
                 unit.setFile(file);
                 if (unit.getJavaClass().endsWith("_jsp") && unit.getLine() != -1) {
@@ -117,7 +121,7 @@ public class PathOptimization {
         return Arrays.stream(source.getPath()).map(String::valueOf).toList();
     }
 
-    public static List<DetectedResult> detectedResults(Infoflow infoflow, IInfoflowCFG iCFG, String projectDir) {
+    public static List<DetectedResult> detectedResults(Infoflow infoflow, IInfoflowCFG iCFG, String projectDir, boolean trackSourceFile) {
         InfoflowResults infoflowResults = infoflow.getResults();
         List<DetectedResult> results = new ArrayList<>();
         if (!infoflowResults.isEmpty()) {
@@ -127,7 +131,7 @@ public class PathOptimization {
                     DetectedResult result = new DetectedResult();
                     result.setSinkSig(sinkSig);
                     result.setSourceSig(source.getDefinition().toString());
-                    result.setPath(PathOptimization.resultPath(iCFG, source, sink, projectDir));
+                    result.setPath(PathOptimization.resultPath(iCFG, source, sink, projectDir, trackSourceFile));
                     result.setPathStm(PathOptimization.pathStm(source));
                     if (result.getPath().size() > 0) {
                         results.add(result);
@@ -136,6 +140,10 @@ public class PathOptimization {
             }
         }
         return results;
+    }
+
+    public static List<DetectedResult> detectedResults(Infoflow infoflow, IInfoflowCFG iCFG, String projectDir) {
+        return detectedResults(infoflow, iCFG, projectDir, false);
     }
 
     public static List<DetectedResult> detectedResults(Infoflow infoflow, IInfoflowCFG iCFG) {

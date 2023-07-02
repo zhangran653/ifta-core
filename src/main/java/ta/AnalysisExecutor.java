@@ -29,6 +29,12 @@ public class AnalysisExecutor {
 
     private boolean writeOutput;
 
+    private boolean trackSourceFile;
+
+    public boolean isTrackSourceFile() {
+        return trackSourceFile;
+    }
+
     public Config getConfig() {
         return config;
     }
@@ -97,6 +103,17 @@ public class AnalysisExecutor {
         return this;
     }
 
+    public AnalysisExecutor setCallGraphAlgorithm(String callGraphAlgorithm) {
+        this.config.setCallgraphAlgorithm(callGraphAlgorithm);
+        return this;
+    }
+
+    public AnalysisExecutor trackSourceFile(boolean trackSourceFile) {
+        this.trackSourceFile = trackSourceFile;
+        return this;
+    }
+
+
     public AnalysisExecutor analysis() {
         if (config == null) {
             throw new AssertionError("config must be set before analysis.");
@@ -139,7 +156,8 @@ public class AnalysisExecutor {
         List<RuleResult> ruleResult = new ArrayList<>();
         for (Config.Rule r : config.getRules()) {
             infoflow.computeInfoflow(appPath, libPath, epoints, r.getSources(), r.getSinks());
-            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), config.isProjectAJar() ? tempdir : project);
+            List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(),
+                    config.isProjectAJar() ? tempdir : project, trackSourceFile);
             ruleResult.add(new RuleResult(r.getName(), results));
         }
         this.ruleResult = ruleResult;
