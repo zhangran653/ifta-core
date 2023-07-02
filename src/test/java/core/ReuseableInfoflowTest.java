@@ -262,7 +262,8 @@ public class ReuseableInfoflowTest {
 
 //        c.setProject("/home/ran/Documents/work/thusa2/jsp-demo2");
 //        c.setJdk("/home/ran/Documents/work/thusa2/ifpc-testcase/jdk/rt.jar");
-        c.setProject("D:\\jsp-demo");
+        c.setProject("D:\\ifpc-testcase\\WebGoat-5.0");
+        //c.setProject("C:\\dev\\sa-engine");
         c.setJdk("D:\\ifpc-testcase\\jdk\\rt.jar");
         if (c.isAutoDetect()) {
             c.autoConfig();

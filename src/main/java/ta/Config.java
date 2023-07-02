@@ -141,6 +141,7 @@ public class Config {
                 throw new AssertionError("project not found!");
             }
             if (!f.isDirectory()) {
+                // TODO support jar file.
                 throw new AssertionError("project is not a directory!");
             }
 
@@ -181,10 +182,10 @@ public class Config {
                 throw new RuntimeException(e);
             }
             appPath = tempDir;
-            addEntry();
             List<String> libClasses = scanLibClasses(libPath);
             libClasses.removeAll(javaClasses);
             excludes.addAll(libClasses);
+            addEntry();
 
         }
     }
@@ -232,50 +233,17 @@ public class Config {
         libPath = String.join(File.pathSeparator, realLibPath);
     }
 
-    private void setUpSoot() {
-        G.reset();
-        Options.v().set_src_prec(Options.src_prec_only_class);
-        Options.v().set_prepend_classpath(true);
-        Options.v().set_output_format(Options.output_format_none);
-        Options.v().set_exclude(excludes.stream().toList());
-        Options.v().set_no_bodies_for_excluded(true);
-        Options.v().set_allow_phantom_refs(true);
-        Options.v().set_process_dir(Collections.singletonList(tempDir));
-        Options.v().set_whole_program(true);
-        Scene.v().loadNecessaryClasses();
-        PackManager.v().runPacks();
-    }
-
     public void addEntry() {
         if (autoAddEntry) {
-            setUpSoot();
             List<String> javaClasses = PathOptimization.filterFile(tempDir, new String[]{"**/*.class"});
-            for (var clazz : javaClasses) {
-                String absPath = Paths.get(tempDir, clazz).toString();
-                String fullClassName = PathOptimization.className(absPath);
-                try {
-                    SootClass sc = Scene.v().getSootClass(fullClassName);
-                    if (sc.declaresMethodByName("doGet")) {
-                        String sg = sc.getMethodByName("doGet").getSignature();
-                        logger.info("add {} to entry points", sg);
-                        epoints.add(sg);
-                    }
-                    if (sc.declaresMethodByName("doPost")) {
-                        String sg = sc.getMethodByName("doPost").getSignature();
-                        logger.info("add {} to entry points", sg);
-                        epoints.add(sg);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (clazz.endsWith("_jsp.class")) {
-                    String entry = String.format(entryFormatter, fullClassName);
-                    logger.info("add {} to entry points", entry);
-                    epoints.add(entry);
-                }
-
-            }
-
+            EntrySelectorManager entrySelectorManager = EntrySelectorManager.buildEntryManager(tempDir);
+            entrySelectorManager.selectorList().forEach(s -> {
+                // TODO filter selectors based on configuration.
+                javaClasses.forEach(c -> {
+                    String absPath = Paths.get(tempDir, c).toString();
+                    epoints.addAll(s.select(absPath));
+                });
+            });
         }
     }
 
