@@ -150,4 +150,10 @@ public class AnalysisExecutorTest {
                 .setOutput(result)
                 .analysis();
     }
+
+    @Test
+    public void test8(){
+        // cmd
+        // /home/ran/.jdks/graalvm-ce-17/bin/java -jar ta.jar -dc true -p "/home/ran/Documents/work/thusa2/ifpc-testcase/WebGoat-5.0" -j "/home/ran/Documents/work/thusa2/ifpc-testcase/jdk/rt.jar" -t true -w true -o result.json -cg SPARK -to 180
+    }
 }
