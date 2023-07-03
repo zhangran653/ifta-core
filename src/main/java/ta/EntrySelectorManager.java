@@ -11,22 +11,26 @@ import soot.tagkit.AnnotationTag;
 import soot.tagkit.VisibilityAnnotationTag;
 import utils.PathOptimization;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class EntrySelectorManager {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private final Map<String, String> classNameCache = new HashMap<>();
+
     private final String entryFormatter = "<%s: void _jspService(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>";
 
     // TODO more annotation to be collected.
-    private final HashSet<String> tags = new HashSet<>(List.of("Lorg/springframework/amqp/rabbit/annotation/RabbitHandler;", "Lorg/springframework/web/bind/annotation/GetMapping;", "Lorg/springframework/web/bind/annotation/PostMapping;", "Lorg/springframework/web/bind/annotation/ExceptionHandler;"));
+    private final HashSet<String> tags = new HashSet<>(
+            List.of("Lorg/springframework/amqp/rabbit/annotation/RabbitHandler;",
+                    "Lorg/springframework/web/bind/annotation/GetMapping;",
+                    "Lorg/springframework/web/bind/annotation/PostMapping;",
+                    "Lorg/springframework/web/bind/annotation/ExceptionHandler;"));
     EntrySelector jspServiceEntry = (classFilePath) -> {
         List<String> entries = new ArrayList<>();
-        String fullClassName = PathOptimization.className(classFilePath);
+        String fullClassName = className(classFilePath);
         try {
             SootClass sc = Scene.v().getSootClass(fullClassName);
             if (sc.declaresMethodByName("doGet")) {
@@ -55,7 +59,7 @@ public class EntrySelectorManager {
     // TODO cache classFilePath and fullClassName
     EntrySelector annotationTagEntry = (classFilePath) -> {
         List<String> entries = new ArrayList<>();
-        String fullClassName = PathOptimization.className(classFilePath);
+        String fullClassName = className(classFilePath);
         try {
             SootClass sc = Scene.v().getSootClass(fullClassName);
             sc.getMethods().forEach(m -> {
@@ -78,7 +82,7 @@ public class EntrySelectorManager {
 
     EntrySelector publicStaticOrMainEntry = (classFilePath) -> {
         List<String> entries = new ArrayList<>();
-        String fullClassName = PathOptimization.className(classFilePath);
+        String fullClassName = className(classFilePath);
         try {
             SootClass sc = Scene.v().getSootClass(fullClassName);
             sc.getMethods().forEach(m -> {
@@ -97,7 +101,21 @@ public class EntrySelectorManager {
     public List<EntrySelector> selectors = List.of(jspServiceEntry, annotationTagEntry, publicStaticOrMainEntry);
 
 
+    private final Map<String, EntrySelector> namedEntrySelector = new HashMap<>() {{
+        put("JSPSERVICEENTRY", jspServiceEntry);
+        put("ANNOTATIONTAGENTRY", annotationTagEntry);
+        put("PUBLICSTATICORMAINENTRY", publicStaticOrMainEntry);
+    }};
+
+
     public EntrySelectorManager(String processDir) {
+        setSoot(processDir);
+    }
+
+    public EntrySelectorManager() {
+    }
+
+    public void setSoot(String processDir) {
         G.reset();
         Options.v().set_src_prec(Options.src_prec_only_class);
         Options.v().set_prepend_classpath(true);
@@ -110,12 +128,43 @@ public class EntrySelectorManager {
         PackManager.v().runPacks();
     }
 
+    public void setProcessorDir(String processorDir) {
+        setSoot(processorDir);
+    }
+
     public static EntrySelectorManager buildEntryManager(String processDir) {
         return new EntrySelectorManager(processDir);
     }
 
+    public static EntrySelectorManager buildEntryManager() {
+        return new EntrySelectorManager();
+    }
+
     public List<EntrySelector> selectorList() {
         return selectors;
+    }
+
+    public List<EntrySelector> selectorList(String entryNames) {
+        if (entryNames == null || entryNames.isBlank()) {
+            return selectors;
+        }
+        return Arrays.stream(entryNames.split(","))
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .map(namedEntrySelector::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+
+    private String className(String classFilePath) {
+        String className = classNameCache.get(classFilePath);
+        if (className == null) {
+            String fullClassName = PathOptimization.className(classFilePath);
+            classNameCache.put(classFilePath, fullClassName);
+            return fullClassName;
+        }
+        return className;
     }
 
 }

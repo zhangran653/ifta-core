@@ -52,6 +52,16 @@ public class Config {
 
     private boolean isProjectAJar = false;
 
+    private String entrySelector;
+
+    public String getEntrySelector() {
+        return entrySelector;
+    }
+
+    public void setEntrySelector(String entrySelector) {
+        this.entrySelector = entrySelector;
+    }
+
     public boolean isProjectAJar() {
         return isProjectAJar;
     }
@@ -228,7 +238,7 @@ public class Config {
         if (autoAddEntry) {
             List<String> javaClasses = PathOptimization.filterFile(tempDir, new String[]{"**/*.class"});
             EntrySelectorManager entrySelectorManager = EntrySelectorManager.buildEntryManager(tempDir);
-            entrySelectorManager.selectorList().forEach(s -> {
+            entrySelectorManager.selectorList(entrySelector).forEach(s -> {
                 // TODO filter selectors based on configuration.
                 javaClasses.forEach(c -> {
                     String absPath = Paths.get(tempDir, c).toString();
