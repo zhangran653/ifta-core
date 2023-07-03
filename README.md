@@ -98,6 +98,11 @@ named arguments:
                          Call graph algorithm. (default: SPARK)
   -to TIMEOUT, --timeout TIMEOUT
                          Path reconstruction time out. (default: 180)
+  -es ENTRYSELECTOR, --entryselector ENTRYSELECTOR
+                         entry        selectors,         choose        from
+                         'JspServiceEntry','AnnotationTagEntry','PublicStaticOrMainEntry'.
+                         Multiple  selectors  can  be   set   with  ','  in
+                         between. Default all
 ```
 ### a example:
 ```
