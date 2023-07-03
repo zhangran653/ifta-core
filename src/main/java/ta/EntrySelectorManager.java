@@ -145,7 +145,7 @@ public class EntrySelectorManager {
     }
 
     public List<EntrySelector> selectorList(String entryNames) {
-        if (entryNames == null || entryNames.isBlank()) {
+        if (entryNames == null || entryNames.isBlank() || entryNames.equalsIgnoreCase("ALL")) {
             return selectors;
         }
         return Arrays.stream(entryNames.split(","))

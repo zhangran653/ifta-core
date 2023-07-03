@@ -118,6 +118,11 @@ public class AnalysisExecutor {
         return this;
     }
 
+    public AnalysisExecutor setEntrySelector(String entrySelector){
+        this.config.setEntrySelector(entrySelector);
+        return this;
+    }
+
 
     public AnalysisExecutor analysis() {
         if (config == null) {

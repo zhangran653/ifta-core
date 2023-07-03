@@ -148,6 +148,8 @@ public class AnalysisExecutorTest {
                 // write detect result to file.
                 .writeOutput(true)
                 .setOutput(result)
+                // Entry selectors:JspServiceEntry,AnnotationTagEntry,PublicStaticOrMainEntry
+                .setEntrySelector("AnnotationTagEntry,PublicStaticOrMainEntry")
                 .analysis();
     }
 

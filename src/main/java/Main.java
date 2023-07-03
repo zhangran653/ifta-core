@@ -63,6 +63,8 @@ public class Main {
                 .help("Call graph algorithm.");
         parser.addArgument("-to", "--timeout")
                 .setDefault(180).help("Path reconstruction time out.");
+        parser.addArgument("-es", "--entryselector")
+                .help("entry selectors, choose from 'JspServiceEntry','AnnotationTagEntry','PublicStaticOrMainEntry'. Multiple selectors can be set with ',' in between. Default all");
 
         Namespace ns = null;
         try {
@@ -107,6 +109,11 @@ public class Main {
         if (timeout != null) {
             analysisExecutor.setTimeout(Integer.parseInt(timeout));
         }
+        String es = ns.getString("entryselector");
+        if (timeout != null) {
+            analysisExecutor.setEntrySelector(es);
+        }
+
         analysisExecutor.analysis();
 
     }
