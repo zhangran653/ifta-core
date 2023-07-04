@@ -2,6 +2,8 @@ package ta;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import pc.PathCheckResult;
+import pc.PathCheckerManager;
 import utils.ClassPathResource;
 import utils.IFFactory;
 import utils.PathOptimization;
@@ -11,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class AnalysisExecutor {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
@@ -30,6 +33,10 @@ public class AnalysisExecutor {
     private boolean writeOutput;
 
     private boolean trackSourceFile;
+
+    private List<Function<ReuseableInfoflow, PathCheckResult>> postChecks;
+
+    private boolean doPostCheck = true;
 
     public boolean isTrackSourceFile() {
         return trackSourceFile;
@@ -123,6 +130,10 @@ public class AnalysisExecutor {
         return this;
     }
 
+    public AnalysisExecutor setPathChecker(String pathChecker) {
+        this.config.setPathCheckers(pathChecker);
+        return this;
+    }
 
     public AnalysisExecutor analysis() {
         if (config == null) {
@@ -133,6 +144,9 @@ public class AnalysisExecutor {
         }
         if (config.getRules() == null || config.getRules().isEmpty()) {
             throw new AssertionError("rules must not be empty.");
+        }
+        if (config.getPathCheckers() != null && !config.getPathCheckers().isBlank()) {
+            this.postChecks = PathCheckerManager.buildPathCheckerManager().pathCheckerList(config.getPathCheckers());
         }
         config.autoConfig();
         if (!useDefault) {
@@ -166,6 +180,9 @@ public class AnalysisExecutor {
         List<RuleResult> ruleResult = new ArrayList<>();
         for (Config.Rule r : config.getRules()) {
             infoflow.computeInfoflow(appPath, libPath, epoints, r.getSources(), r.getSinks());
+            if (doPostCheck && postChecks != null) {
+                postChecks.forEach(f -> f.apply(infoflow));
+            }
             List<DetectedResult> results = PathOptimization.detectedResults(infoflow, infoflow.getICFG(), project, trackSourceFile);
             ruleResult.add(new RuleResult(r.getName(), results));
         }

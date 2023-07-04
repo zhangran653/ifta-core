@@ -65,6 +65,8 @@ public class Main {
                 .setDefault(180).help("Path reconstruction time out.");
         parser.addArgument("-es", "--entryselector")
                 .help("entry selectors, choose from 'JspServiceEntry','AnnotationTagEntry','PublicStaticOrMainEntry'. Multiple selectors can be set with ',' in between. Default all");
+        parser.addArgument("-pc", "--pathchecker")
+                .help("path checkers. choose from 'default'. Multiple selectors can be set with ',' in between.");
 
         Namespace ns = null;
         try {
@@ -110,8 +112,12 @@ public class Main {
             analysisExecutor.setTimeout(Integer.parseInt(timeout));
         }
         String es = ns.getString("entryselector");
-        if (timeout != null) {
+        if (es != null) {
             analysisExecutor.setEntrySelector(es);
+        }
+        String pc = ns.getString("pathchecker");
+        if (pc != null) {
+            analysisExecutor.setPathChecker(pc);
         }
 
         analysisExecutor.analysis();

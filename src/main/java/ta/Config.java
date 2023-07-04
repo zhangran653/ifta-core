@@ -54,6 +54,16 @@ public class Config {
 
     private String entrySelector;
 
+    private String pathCheckers;
+
+    public String getPathCheckers() {
+        return pathCheckers;
+    }
+
+    public void setPathCheckers(String pathCheckers) {
+        this.pathCheckers = pathCheckers;
+    }
+
     public String getEntrySelector() {
         return entrySelector;
     }
