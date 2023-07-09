@@ -239,10 +239,7 @@ java17 -jar ta.jar -dc true -p "/home/ran/Documents/work/thusa2/ifpc-testcase/We
 
 ### TODO:
 - Optimize deprecated. For now keep them to pass tests.
-- Filter selectors based on configuration.
-- More annotation to be collected.
-- Cache classFilePath and fullClassName.
-- Make entry point selector configurable.
+- More annotation to be collected for entry points.
 - Jspc compile jsp to java. Incompatible with java 17+. Anyway the jsp compiler should be in a standalone module for best.
 - Support parse from .smap files. But is it necessary? Is there any chance that JSP classes won't contain "sourceDebug"?
 - ...
